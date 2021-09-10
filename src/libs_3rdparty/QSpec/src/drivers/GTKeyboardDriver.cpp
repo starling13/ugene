@@ -47,39 +47,39 @@ QList<Qt::Key> GTKeyboardDriver::modifiersToKeys(Qt::KeyboardModifiers mod) {
     return result;
 }
 
-bool GTKeyboardDriver::keyClick(char key, Qt::KeyboardModifiers modifiers, bool waitForMainThread) {
+bool GTKeyboardDriver::keyClick(char key, Qt::KeyboardModifiers modifiers) {
     DRIVER_CHECK(key != 0, "key = 0");
     DRIVER_CHECK(keyPress(key, modifiers), "key could not be pressed");
+    GTThread::waitForMainThread();
     DRIVER_CHECK(keyRelease(key, modifiers), "key could not be released");
-    if (waitForMainThread) {
-        GTThread::waitForMainThread();
-    }
+    GTThread::waitForMainThread();
     return true;
 }
 
-bool GTKeyboardDriver::keyClick(Qt::Key key, Qt::KeyboardModifiers modifiers, bool waitForMainThread) {
+bool GTKeyboardDriver::keyClick(Qt::Key key, Qt::KeyboardModifiers modifiers) {
     DRIVER_CHECK(key != 0, "key = 0");
     DRIVER_CHECK(keyPress(key, modifiers), "key could not be pressed");
+    GTThread::waitForMainThread();
     DRIVER_CHECK(keyRelease(key, modifiers), "key could not be released");
-    if (waitForMainThread) {
-        GTThread::waitForMainThread();
-    }
+    GTThread::waitForMainThread();
     return true;
 }
 #undef GT_METHOD_NAME
 
 bool GTKeyboardDriver::keySequence(const QString &str, Qt::KeyboardModifiers modifiers) {
     QList<Qt::Key> modifierKeys = modifiersToKeys(modifiers);
-    foreach (Qt::Key mod, modifierKeys) {
+    for (const Qt::Key &mod : qAsConst(modifierKeys)) {
         DRIVER_CHECK(keyPress(mod), "modifier could not be pressed");
     }
 
-    foreach (QChar ch, str) {
+    for (const QChar &ch : qAsConst(str)) {
         char asciiChar = ch.toLatin1();
         if (isalpha(asciiChar) && !islower(asciiChar)) {
-            DRIVER_CHECK(keyClick(asciiChar, Qt::ShiftModifier, false), QString("%1 char could not be clicked with shift modifier").arg(asciiChar));
+            DRIVER_CHECK(keyPress(asciiChar, Qt::ShiftModifier), QString("%1 char could not be clicked with shift modifier").arg(asciiChar));
+            DRIVER_CHECK(keyRelease(asciiChar, Qt::ShiftModifier), QString("%1 char could not be clicked with shift modifier").arg(asciiChar));
         } else {
-            DRIVER_CHECK(keyClick(asciiChar, Qt::NoModifier, false), QString("%1 char could not be clicked").arg(asciiChar));
+            DRIVER_CHECK(keyPress(asciiChar, Qt::NoModifier), QString("%1 char could not be clicked").arg(asciiChar));
+            DRIVER_CHECK(keyRelease(asciiChar, Qt::NoModifier), QString("%1 char could not be clicked").arg(asciiChar));
         }
         GTGlobals::sleep(10);
     }

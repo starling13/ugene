@@ -261,11 +261,10 @@ QAction *GTMenu::clickMenuItem(GUITestOpStatus &os, const QMenu *menu, const QSt
             while (action != menu->activeAction()) {
                 GTKeyboardDriver::keyClick(Qt::Key_Down);
             }
-            GTKeyboardDriver::keyClick(Qt::Key_Enter, Qt::NoModifier, false);
+            GTKeyboardDriver::keyClick(Qt::Key_Enter);
             break;
         default:
-            GT_CHECK_RESULT(false, "clickMenuItem: unsupported method" + QString::number(useMethod), nullptr);
-            break;
+            GT_FAIL("clickMenuItem: unsupported method" + QString::number(useMethod), nullptr);
     }
     GTThread::waitForMainThread();
     QMenu *activePopupMenu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
