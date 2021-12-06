@@ -234,8 +234,7 @@ MSAEditor::~MSAEditor() {
 }
 
 void MSAEditor::buildStaticToolbar(QToolBar *tb) {
-    // TODO:ichebyki
-    // 0 must be changed for all, move action to this object?
+    this->staticToolBar = tb;
     tb->addAction(getMaEditorWgt(0)->copyFormattedSelectionAction);
 
     tb->addAction(saveAlignmentAction);
@@ -471,8 +470,16 @@ QWidget *MSAEditor::createWidget()
 {
     Q_ASSERT(ui == nullptr);
 
-    ui = new MsaEditorMultilineWgt(this);
+    ui = new MsaEditorMultilineWgt(this, false);
+    multilineViewAction->setChecked(false);
+    initActionsAndSignals();
+    initChildrenActionsAndSignals();
+    updateActions();
 
+    return ui;
+}
+
+void MSAEditor::initActionsAndSignals() {
     initActions();
 
     connect(searchInSequencesAction, SIGNAL(triggered()), this, SLOT(sl_searchInSequences()));
@@ -507,6 +514,11 @@ QWidget *MSAEditor::createWidget()
 
     qDeleteAll(filters);
 
+    sl_hideTreeOP();
+    treeManager.loadRelatedTrees();
+}
+
+void MSAEditor::initChildrenActionsAndSignals() {
     MaEditorWgt *child;
     for (uint i = 0; i < getUI()->getChildrenCount(); i++) {
         child = getUI()->getUI(i);
@@ -520,13 +532,6 @@ QWidget *MSAEditor::createWidget()
         new MoveToObjectMaController(this, child);
         initDragAndDropSupport(child);
     }
-
-    sl_hideTreeOP();
-    treeManager.loadRelatedTrees();
-
-    updateActions();
-
-    return ui;
 }
 
 void MSAEditor::initActions() {
@@ -576,8 +581,6 @@ void MSAEditor::initActions() {
 
 void MSAEditor::sl_onContextMenuRequested(const QPoint & /*pos*/) {
     QMenu m;
-    // TODO:ichebyki
-    // not good, the better is useing the additional arg
     MaEditorWgt *sender = qobject_cast<MaEditorWgt*>(QObject::sender());
     uint uiIndex = getUI()->getUIIndex(sender);
 
@@ -686,7 +689,7 @@ bool MSAEditor::eventFilter(QObject *, QEvent *e) {
 }
 
 void MSAEditor::initDragAndDropSupport(MaEditorWgt *wgt) {
-    SAFE_POINT(wgt != nullptr, QString("MSAEditor::ui is not initialized in MSAEditor::initDragAndDropSupport"), );
+    SAFE_POINT(wgt != nullptr, QString("MSAEditor::wgt is not initialized in MSAEditor::initDragAndDropSupport"), );
     wgt->setAcceptDrops(true);
     wgt->installEventFilter(this);
 }
@@ -970,6 +973,16 @@ void MSAEditor::sl_exportImage() {
                                                                         ExportImageDialog::NoScaling,
                                                                         parentWidget);
     dlg->exec();
+}
+
+void MSAEditor::sl_multilineViewAction()
+{
+    bool childrenChanged = getUI()->setMultilineMode(multilineViewAction->isChecked());
+    if (childrenChanged) {
+        initChildrenActionsAndSignals();
+        updateActions();
+    }
+    buildStaticToolbar(staticToolBar);
 }
 
 }  // namespace U2
